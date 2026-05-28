@@ -8,6 +8,8 @@
 
 It provides an intuitive graphical interface to configure layouts, map functions, and deploy settings directly to [`tiny-dfr`](https://github.com/ubports/tiny-dfr), the underlying daemon responsible for rendering the Touch Bar on Linux.
 
+<img width="1922" height="1319" alt="Screenshot_20260528_022506" src="https://github.com/user-attachments/assets/ef3fb8ab-3710-4c5a-b95a-5a04de9aba4b" />
+
 ---
 
 ## 🚀 Features
