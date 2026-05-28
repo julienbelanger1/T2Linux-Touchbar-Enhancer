@@ -96,4 +96,4 @@ If you wish to contribute, the following features would be excellent additions:
 
 ## 📝 License
 
-This project is open-source. (Please specify license here, assuming MIT by default).
+This project is open-source. MIT License.
