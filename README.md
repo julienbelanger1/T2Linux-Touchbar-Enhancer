@@ -100,5 +100,8 @@ If you wish to contribute, the following features would be excellent additions:
 
 This project is open-source. MIT License.
 
-If you appreciate my work, feel free to pay me a coffee. Thanks!
-<a href='https://ko-fi.com/Q8T52071IX' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi6.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
+<div align="center">
+  <br>
+If you appreciate my work, feel free to buy me a coffee :) Thanks!
+<br><br>
+ <a href='https://ko-fi.com/Q8T52071IX' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi6.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a></div>
