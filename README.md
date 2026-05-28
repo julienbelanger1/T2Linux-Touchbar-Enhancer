@@ -15,7 +15,7 @@ It provides an intuitive graphical interface to configure layouts, map functions
 ## 🚀 Features
 
 - **Visual Layout Editor**: Easily add, arrange, and remove Touch Bar buttons visually.
-- **Dual Layers Support**: Configure separate layouts for standard Function Keys (F1-F12) and Media Keys.
+- **Dual Layout Support**: Configure separate layouts for standard Function Keys (F1-F12) and Media Keys.
 - **CupertinoIcons Integration**: Natively maps Apple's Cupertino icons to rasterized PNGs automatically, ensuring a native macOS look and feel.
 - **Hardware Toggles**: Control critical Touch Bar features such as:
   - **Show Button Outlines**: Toggle visual borders around touch targets.
@@ -51,8 +51,8 @@ Clone the repository and run the application using `uv`:
 
 ```bash
 # Clone the repository
-git clone https://github.com/julien/touchbarv2.git
-cd touchbarv2
+git clone https://github.com/julienbelanger1/T2Linux-Touchbar-Enhancer.git
+cd T2Linux-Touchbar-Enhancer
 
 # Run the app directly using uv (it will handle dependencies)
 uv run python -m touchbar_enhancer
@@ -60,7 +60,7 @@ uv run python -m touchbar_enhancer
 
 ### How to Use
 
-1. **Select Layer**: Choose between editing the `F1-F12` layer or the `Media Keys` layer using the top toggle.
+1. **Select Layout**: Choose between editing the `F1-F12` layout or the `Media Keys` layout using the top toggle.
 2. **Add Buttons**: Click items in the **Toolbox** (right pane) to add them to your active layout.
 3. **Remove Buttons**: Click any button on the **Active Layout** preview (left pane) to remove it.
 4. **Adjust Settings**: Toggle Pixel Shift, Adaptive Brightness, and Outlines.
@@ -99,3 +99,6 @@ If you wish to contribute, the following features would be excellent additions:
 ## 📝 License
 
 This project is open-source. MIT License.
+
+If you appreciate my work, feel free to pay me a coffee. Thanks!
+<a href='https://ko-fi.com/Q8T52071IX' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi6.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
