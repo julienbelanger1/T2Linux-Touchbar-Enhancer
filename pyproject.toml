@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "touchbar-enhancer"
+version = "2.0.0"
+description = "A sleek macOS-like Touch Bar configurator for Linux"
+authors = [
+    { name = "Julien" }
+]
+requires-python = ">=3.10"
+dependencies = [
+    "PyQt6>=6.0.0",
+]
+
+[project.scripts]
+touchbar-enhancer = "touchbar_enhancer.main:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+touchbar_enhancer = ["icons/*"]
+
+[tool.mypy]
+ignore_missing_imports = true
