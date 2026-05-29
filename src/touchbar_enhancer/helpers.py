@@ -5,7 +5,7 @@ import json
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 CUPERTINO_MAP_PATH = os.path.join(CURRENT_DIR, "icons", "cupertino_icons_map.json")
 try:
-    with open(CUPERTINO_MAP_PATH, "r") as f:
+    with open(CUPERTINO_MAP_PATH, "r", encoding="utf-8") as f:
         CUPERTINO_ICONS_MAP = json.load(f)
 except Exception:
     CUPERTINO_ICONS_MAP = {}
@@ -130,7 +130,7 @@ def _format_action(action):
         action = action.replace("+", ",")
         if "," not in action and " " in action:
             action = action.replace(" ", ",")
-            
+
         if "," in action:
             action = [item.strip() for item in action.split(",") if item.strip()]
         else:
@@ -162,13 +162,13 @@ def _format_spacer(stretch, spacer_type):
 
 
 def build_config_toml(
-    media_specs, 
-    primary_specs, 
-    *, 
-    media_layer_default, 
-    show_button_outlines, 
-    enable_pixel_shift, 
-    adaptive_brightness, 
+    media_specs,
+    primary_specs,
+    *,
+    media_layer_default,
+    show_button_outlines,
+    enable_pixel_shift,
+    adaptive_brightness,
     font_template
 ):
     lines = [
@@ -180,7 +180,7 @@ def build_config_toml(
         f'FontTemplate = "{font_template}"',
         "",
     ]
-    
+
     def _build_layer(specs, layer_name):
         layer_lines = [f"{layer_name} = ["]
         for item in specs:
@@ -229,9 +229,9 @@ def build_config_toml(
     if media_specs:
         lines.extend(_build_layer(media_specs, "MediaLayerKeys"))
         lines.append("")
-        
+
     if primary_specs:
         lines.extend(_build_layer(primary_specs, "PrimaryLayerKeys"))
         lines.append("")
-    
+
     return "\n".join(lines) + "\n"
