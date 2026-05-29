@@ -1,6 +1,6 @@
 import os
 import sys
-import base64
+
 import tempfile
 import shutil
 import subprocess
@@ -8,10 +8,10 @@ import tomllib
 
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QPushButton, QLabel, QScrollArea, QGridLayout, QCheckBox,
+    QPushButton, QLabel, QScrollArea, QGridLayout,
     QMessageBox, QFrame, QSizePolicy
 )
-from PyQt6.QtGui import QIcon, QPixmap, QFont, QColor, QPalette, QFontDatabase, QPainter, QAction
+from PyQt6.QtGui import QIcon, QPixmap, QFont, QColor,  QFontDatabase, QPainter, QAction
 from PyQt6.QtCore import Qt, QSize, pyqtSignal, QRect, QPropertyAnimation, pyqtProperty
 
 from touchbar_enhancer.helpers import build_config_toml, CUPERTINO_ICONS_MAP, TINY_DFR_BUILTIN_ICONS, standard_media_layout
@@ -66,7 +66,7 @@ class ToggleSwitch(QWidget):
         painter.setBrush(knob_color)
         knob_radius = self.height() - 6
         knob_x = int(3 + self._position * (self.width() - knob_radius - 6))
-        
+
         knob_rect = QRect(knob_x, 3, knob_radius, knob_radius)
         painter.drawEllipse(knob_rect)
         painter.end()
@@ -101,7 +101,7 @@ class ToolboxButton(QPushButton):
         self.preset = preset
         self.setObjectName("presetBtn")
         self.setFixedHeight(38)
-        
+
         # Create a small + badge in the top-right corner
         self.badge = QLabel("+", self)
         self.badge.setObjectName("badge")
@@ -118,7 +118,7 @@ class ToolboxButton(QPushButton):
         self.badge.setFixedSize(14, 14)
         self.badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.badge.hide()
-        
+
         # Set ToolTip (has native delay, satisfying the slower popup requirement)
         self.setToolTip(f"Add {preset.get('label', preset['name'])}")
 
@@ -143,7 +143,7 @@ class TouchbarEnhancer(QMainWindow):
         self.resize(1100, 750)
         self.setMinimumSize(800, 600)
         self.setStyleSheet(self.get_stylesheet())
-        
+
         self.settings = {
             "media_default": True,
             "show_outlines": True,
@@ -156,7 +156,7 @@ class TouchbarEnhancer(QMainWindow):
             {"type": "Text", "val": f"F{i}", "action": f"F{i}", "stretch": 1} for i in range(1, 13)
         ]
         self.layout_specs = self.media_specs
-        
+
         self.init_ui()
         self.load_active_config()
 
@@ -286,7 +286,7 @@ class TouchbarEnhancer(QMainWindow):
     def init_ui(self):
         menubar = self.menuBar()
         help_menu = menubar.addMenu("Help")
-        
+
         about_action = QAction("About Touch Bar Enhancer", self)
         about_action.triggered.connect(self.show_about)
         help_menu.addAction(about_action)
@@ -307,25 +307,25 @@ class TouchbarEnhancer(QMainWindow):
         title_layout.addWidget(header)
         title_layout.addWidget(subtitle)
         header_layout.addLayout(title_layout)
-        
+
         header_layout.addStretch()
-        
+
         # Layer Toggle in Header
         toggle_container = QFrame()
         toggle_container.setProperty("class", "Card")
         toggle_container_layout = QHBoxLayout(toggle_container)
         toggle_container_layout.setContentsMargins(15, 10, 15, 10)
         toggle_container_layout.setSpacing(12)
-        
+
         self.lbl_f1 = QLabel("F1-F12")
         self.lbl_media = QLabel("Media Keys")
         self.layer_toggle = ToggleSwitch()
         self.layer_toggle.toggled.connect(self.on_layer_toggle)
-        
+
         toggle_container_layout.addWidget(self.lbl_f1)
         toggle_container_layout.addWidget(self.layer_toggle)
         toggle_container_layout.addWidget(self.lbl_media)
-        
+
         header_layout.addWidget(toggle_container)
         main_layout.addLayout(header_layout)
 
@@ -337,12 +337,12 @@ class TouchbarEnhancer(QMainWindow):
         self.preview_container = QFrame()
         self.preview_container.setObjectName("previewContainer")
         self.preview_container.setFixedHeight(60)
-        
+
         self.preview_layout = QHBoxLayout(self.preview_container)
         self.preview_layout.setContentsMargins(8, 8, 8, 8)
         self.preview_layout.setSpacing(6)
         main_layout.addWidget(self.preview_container)
-        
+
         self.on_layer_toggle(self.settings["media_default"])
         self.layer_toggle._checked = self.settings["media_default"]
         self.layer_toggle.position = 1.0 if self.settings["media_default"] else 0.0
@@ -358,7 +358,7 @@ class TouchbarEnhancer(QMainWindow):
         settings_layout = QVBoxLayout(settings_card)
         settings_layout.setContentsMargins(25, 25, 25, 25)
         settings_layout.setSpacing(20)
-        
+
         settings_header = QLabel("Settings")
         settings_header.setProperty("class", "CardHeader")
         settings_layout.addWidget(settings_header)
@@ -367,15 +367,15 @@ class TouchbarEnhancer(QMainWindow):
         self.chk_show_outlines = ToggleSwitch()
         self.chk_pixel_shift = ToggleSwitch()
         self.chk_adaptive_brightness = ToggleSwitch()
-        
+
         self.chk_show_outlines.setChecked(self.settings["show_outlines"])
         self.chk_pixel_shift.setChecked(self.settings["enable_pixel_shift"])
         self.chk_adaptive_brightness.setChecked(self.settings["adaptive_brightness"])
-        
+
         settings_layout.addLayout(self.create_setting_row("Show Button Outlines", self.chk_show_outlines))
         settings_layout.addLayout(self.create_setting_row("Enable Pixel Shift", self.chk_pixel_shift))
         settings_layout.addLayout(self.create_setting_row("Adaptive Brightness", self.chk_adaptive_brightness))
-        
+
         settings_layout.addStretch()
 
         reset_btn = QPushButton("Reset to Defaults")
@@ -408,29 +408,29 @@ class TouchbarEnhancer(QMainWindow):
         self.grid_layout = QGridLayout(scroll_content)
         self.grid_layout.setSpacing(10)
         self.grid_layout.setContentsMargins(0, 0, 10, 0) # margin for scrollbar
-        
+
         row = 0
         col = 0
         for preset in PRESETS:
             btn = ToolboxButton(preset)
-            
+
             icon_name = preset.get("icon", "")
             pixmap = self.get_icon_pixmap(icon_name)
             if pixmap:
                 btn.setIcon(QIcon(pixmap))
                 btn.setIconSize(QSize(20, 20))
-            
+
             if preset.get("type") == "Spacer":
                 btn.setText("Spacer")
-            
+
             btn.clicked.connect(lambda checked, p=preset: self.add_to_layout(p))
-            
+
             self.grid_layout.addWidget(btn, row, col)
             col += 1
             if col > 2: # 3 columns to fit nicely in the right pane
                 col = 0
                 row += 1
-                
+
         scroll.setWidget(scroll_content)
         toolbox_layout.addWidget(scroll)
 
@@ -451,7 +451,7 @@ class TouchbarEnhancer(QMainWindow):
     def get_icon_pixmap(self, icon_name, size=64):
         if not icon_name:
             return None
-            
+
         if icon_name in TINY_DFR_BUILTIN_ICONS:
             svg_path = f"/usr/share/tiny-dfr/{icon_name}.svg"
             if os.path.exists(svg_path):
@@ -468,21 +468,21 @@ class TouchbarEnhancer(QMainWindow):
                         return pixmap
                 except ImportError:
                     pass
-            
+
         codepoint = CUPERTINO_ICONS_MAP.get(icon_name)
         if codepoint is not None:
             pixmap = QPixmap(size, size)
             pixmap.fill(Qt.GlobalColor.transparent)
-            
+
             painter = QPainter(pixmap)
             painter.setRenderHint(QPainter.RenderHint.Antialiasing)
             painter.setRenderHint(QPainter.RenderHint.TextAntialiasing)
-            
+
             font = QFont("CupertinoIcons")
             font.setPixelSize(int(size * 0.8)) # slightly smaller to fit
             painter.setFont(font)
             painter.setPen(QColor(255, 255, 255))
-            
+
             char = chr(codepoint)
             painter.drawText(QRect(0, 0, size, size), Qt.AlignmentFlag.AlignCenter, char)
             painter.end()
@@ -511,13 +511,13 @@ class TouchbarEnhancer(QMainWindow):
             child = self.preview_layout.takeAt(0)
             if child.widget():
                 child.widget().deleteLater()
-                
+
         for i, item in enumerate(self.layout_specs):
             btn = QPushButton()
             btn.setToolTip(f"{item.get('action', '')} (Click to remove)")
             btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
             btn.setFixedHeight(38)
-            
+
             if item.get("type") == "Spacer":
                 btn.setStyleSheet("""
                     QPushButton {
@@ -552,51 +552,51 @@ class TouchbarEnhancer(QMainWindow):
                         btn.setText(val)
                 else:
                     btn.setText(val)
-                    
+
                 self.preview_layout.addWidget(btn, item.get("stretch", 1))
-                
+
             btn.clicked.connect(lambda checked, idx=i: self.remove_from_layout(idx))
 
     def load_active_config(self):
         # Prefer user local config if available
         user_config_dir = os.path.expanduser("~/.config/touchbar-enhancer")
         user_config_path = os.path.join(user_config_dir, "config.toml")
-        
+
         config_path = user_config_path if os.path.exists(user_config_path) else "/etc/tiny-dfr/config.toml"
-        
+
         if not os.path.exists(config_path):
             self.render_preview()
             return
-            
+
         try:
             with open(config_path, "rb") as f:
                 config = tomllib.load(f)
-                
+
             media_default = config.get("MediaLayerDefault", True)
             self.settings["media_default"] = media_default
             self.settings["show_outlines"] = config.get("ShowButtonOutlines", True)
             self.settings["enable_pixel_shift"] = config.get("EnablePixelShift", False)
             self.settings["adaptive_brightness"] = config.get("AdaptiveBrightness", True)
             self.settings["font_template"] = config.get("FontTemplate", ":bold")
-            
+
             if "MediaLayerKeys" in config:
                 self.media_specs = self._parse_layer_config(config["MediaLayerKeys"])
-                
+
             if "PrimaryLayerKeys" in config:
                 self.primary_specs = self._parse_layer_config(config["PrimaryLayerKeys"])
             else:
                 self.primary_specs = [
                     *[{"type": "Text", "val": f"F{i}", "action": f"F{i}", "stretch": 1} for i in range(1, 13)]
                 ]
-            
+
             self.layout_specs = self.media_specs if media_default else self.primary_specs
-            
+
             self.layer_toggle.setChecked(self.settings["media_default"])
             self.chk_show_outlines.setChecked(self.settings["show_outlines"])
             self.chk_pixel_shift.setChecked(self.settings["enable_pixel_shift"])
             self.chk_adaptive_brightness.setChecked(self.settings["adaptive_brightness"])
             self.render_preview()
-            
+
         except Exception as e:
             QMessageBox.warning(self, "Error", f"Error loading configuration: {e}")
 
@@ -608,7 +608,7 @@ class TouchbarEnhancer(QMainWindow):
             action = ""
             stretch = 1
             spacer_type = "flexible"
-            
+
             if "Text" in item_dict:
                 t_type = "Text"
                 val = item_dict["Text"]
@@ -623,15 +623,15 @@ class TouchbarEnhancer(QMainWindow):
             elif "Battery" in item_dict:
                 t_type = "Battery"
                 val = item_dict["Battery"]
-            
+
             raw_act = item_dict.get("Action", "")
             if isinstance(raw_act, list):
                 action = ", ".join(raw_act)
             else:
                 action = str(raw_act)
-                
+
             stretch = item_dict.get("Stretch", 1)
-            
+
             if t_type == "Spacer":
                 if stretch == 1:
                     spacer_type = "small"
@@ -639,7 +639,7 @@ class TouchbarEnhancer(QMainWindow):
                     spacer_type = "large"
                 else:
                     spacer_type = "flexible"
-                    
+
             layout.append({
                 "type": t_type,
                 "val": val,
@@ -655,7 +655,7 @@ class TouchbarEnhancer(QMainWindow):
             self.settings["show_outlines"] = self.chk_show_outlines.isChecked()
             self.settings["enable_pixel_shift"] = self.chk_pixel_shift.isChecked()
             self.settings["adaptive_brightness"] = self.chk_adaptive_brightness.isChecked()
-            
+
             toml = build_config_toml(
                 self.media_specs,
                 self.primary_specs,
@@ -693,10 +693,10 @@ class TouchbarEnhancer(QMainWindow):
             user_config_dir = os.path.expanduser("~/.config/touchbar-enhancer")
             os.makedirs(user_config_dir, exist_ok=True)
             user_config_path = os.path.join(user_config_dir, "config.toml")
-            with open(user_config_path, 'w') as f:
+            with open(user_config_path, 'w', encoding='utf-8') as f:
                 f.write(toml)
 
-            with open(tmp_config_path, 'w') as f:
+            with open(tmp_config_path, 'w', encoding='utf-8') as f:
                 f.write(toml)
 
             script_path = os.path.join(secure_dir, "deploy-tiny-dfr.sh")
@@ -706,7 +706,7 @@ class TouchbarEnhancer(QMainWindow):
                 'install -d /etc/tiny-dfr',
                 'install -d /var/lib/touchbar-enhancer/icons',
             ]
-            
+
             # Copy config to /var/lib/touchbar-enhancer for systemd restoration
             script_lines.append(f"install -m 0644 '{tmp_config_path}' '/var/lib/touchbar-enhancer/config.toml'")
             script_lines.append(f"install -m 0644 '{tmp_config_path}' '/etc/tiny-dfr/config.toml'")
@@ -716,7 +716,7 @@ class TouchbarEnhancer(QMainWindow):
                 # Also save icon to /var/lib for persistence
                 icon_basename = os.path.basename(dst)
                 script_lines.append(f"install -m 0644 '{src}' '/var/lib/touchbar-enhancer/icons/{icon_basename}'")
-                
+
             # Create systemd drop-in
             dropin_dir = "/etc/systemd/system/tiny-dfr.service.d"
             dropin_file = f"{dropin_dir}/99-touchbar-enhancer.conf"
@@ -729,20 +729,20 @@ class TouchbarEnhancer(QMainWindow):
                 "ExecStartPre=-/bin/sh -c 'cp -f /var/lib/touchbar-enhancer/icons/* /etc/tiny-dfr/ 2>/dev/null || true'",
                 "EOF"
             ])
-            
+
             script_lines.append('systemctl daemon-reload')
             script_lines.append('systemctl restart tiny-dfr')
 
-            with open(script_path, 'w') as f:
+            with open(script_path, 'w', encoding='utf-8') as f:
                 f.write("\n".join(script_lines) + "\n")
             os.chmod(script_path, 0o755)
 
             exit_code = 1
             if hasattr(os, 'geteuid') and os.geteuid() == 0:
-                completed = subprocess.run([script_path], capture_output=True, text=True)
+                completed = subprocess.run([script_path], capture_output=True, text=True, check=False)
                 exit_code = completed.returncode
             elif shutil.which('pkexec'):
-                completed = subprocess.run(['pkexec', script_path], capture_output=True, text=True)
+                completed = subprocess.run(['pkexec', script_path], capture_output=True, text=True, check=False)
                 exit_code = completed.returncode
             else:
                 QMessageBox.critical(self, "Error", "pkexec is not available. Install pkexec or run as root.")
@@ -752,7 +752,7 @@ class TouchbarEnhancer(QMainWindow):
                 QMessageBox.information(self, "Success", "Configuration deployed successfully!")
             else:
                 QMessageBox.critical(self, "Error", f"Failed with exit code {exit_code}.\n{completed.stderr}")
-                
+
         except Exception as exc:
             QMessageBox.critical(self, "Error", str(exc))
         finally:
@@ -769,20 +769,20 @@ class TouchbarEnhancer(QMainWindow):
 def main():
     # Fix for wayland display scaling on Qt
     os.environ["QT_QPA_PLATFORM"] = "wayland;xcb"
-    
+
     app = QApplication(sys.argv)
-    
+
     # Set modern fusion style
     app.setStyle("Fusion")
-    
+
     # Load CupertinoIcons font
     font_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "icons", "CupertinoIcons.ttf")
     if os.path.exists(font_path):
         QFontDatabase.addApplicationFont(font_path)
-    
+
     window = TouchbarEnhancer()
     window.show()
-    
+
     sys.exit(app.exec())
 
 if __name__ == '__main__':
