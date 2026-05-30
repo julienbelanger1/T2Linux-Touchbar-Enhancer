@@ -4,6 +4,8 @@ import sys
 import tempfile
 import shutil
 import subprocess
+import base64
+from io import BytesIO
 import tomllib
 
 from PyQt6.QtWidgets import (
@@ -666,98 +668,95 @@ class TouchbarEnhancer(QMainWindow):
                 font_template=self.settings.get("font_template", ":bold")
             )
 
-            secure_dir = tempfile.mkdtemp(prefix="touchbar_enhancer_")
-            tmp_config_path = os.path.join(secure_dir, "config.toml")
-            custom_icons_to_copy = []
+            with tempfile.TemporaryDirectory(prefix="touchbar_enhancer_") as secure_dir:
+                os.chmod(secure_dir, 0o700)
+                tmp_config_path = os.path.join(secure_dir, "config.toml")
+                custom_icons_to_copy = []
 
-            # We need to collect the custom icons used in the layout
-            icons_needed = set()
-            for specs in [self.media_specs, self.primary_specs]:
-                for item in specs:
-                    if item.get("type") == "Icon":
-                        val = item.get("val", "")
-                        if val.startswith("cupertino_"):
-                            val = val[10:]
-                        if val in CUPERTINO_ICONS_MAP and val not in TINY_DFR_BUILTIN_ICONS:
-                            icons_needed.add(val)
+                # We need to collect the custom icons used in the layout
+                icons_needed = set()
+                for specs in [self.media_specs, self.primary_specs]:
+                    for item in specs:
+                        if item.get("type") == "Icon":
+                            val = item.get("val", "")
+                            if val.startswith("cupertino_"):
+                                val = val[10:]
+                            if val in CUPERTINO_ICONS_MAP and val not in TINY_DFR_BUILTIN_ICONS:
+                                icons_needed.add(val)
 
-            # Generate PNGs from font
-            for name in icons_needed:
-                pixmap = self.get_icon_pixmap(name, size=64)
-                if pixmap:
-                    tmp_png_path = os.path.join(secure_dir, f"cupertino_{name}.png")
-                    pixmap.save(tmp_png_path, "PNG")
-                    custom_icons_to_copy.append((tmp_png_path, f"/etc/tiny-dfr/cupertino_{name}.png"))
+                # Generate PNGs from font
+                for name in icons_needed:
+                    pixmap = self.get_icon_pixmap(name, size=64)
+                    if pixmap:
+                        tmp_png_path = os.path.join(secure_dir, f"cupertino_{name}.png")
+                        pixmap.save(tmp_png_path, "PNG")
+                        custom_icons_to_copy.append((tmp_png_path, f"/etc/tiny-dfr/cupertino_{name}.png"))
 
-            # Save locally for GUI persistence
-            user_config_dir = os.path.expanduser("~/.config/touchbar-enhancer")
-            os.makedirs(user_config_dir, exist_ok=True)
-            user_config_path = os.path.join(user_config_dir, "config.toml")
-            with open(user_config_path, 'w', encoding='utf-8') as f:
-                f.write(toml)
+                # Save locally for GUI persistence
+                user_config_dir = os.path.expanduser("~/.config/touchbar-enhancer")
+                os.makedirs(user_config_dir, exist_ok=True)
+                user_config_path = os.path.join(user_config_dir, "config.toml")
+                with open(user_config_path, 'w', encoding='utf-8') as f:
+                    f.write(toml)
 
-            with open(tmp_config_path, 'w', encoding='utf-8') as f:
-                f.write(toml)
+                script_lines = [
+                    '#!/bin/bash',
+                    'set -euo pipefail',
+                    'install -d /etc/tiny-dfr',
+                    'install -d /var/lib/touchbar-enhancer/icons',
+                ]
 
-            script_path = os.path.join(secure_dir, "deploy-tiny-dfr.sh")
-            script_lines = [
-                '#!/bin/bash',
-                'set -euo pipefail',
-                'install -d /etc/tiny-dfr',
-                'install -d /var/lib/touchbar-enhancer/icons',
-            ]
+                # Copy config to /var/lib/touchbar-enhancer for systemd restoration
+                b64_toml = base64.b64encode(toml.encode('utf-8')).decode('utf-8')
+                script_lines.append(f"echo '{b64_toml}' | base64 -d > '/var/lib/touchbar-enhancer/config.toml'")
+                script_lines.append(f"echo '{b64_toml}' | base64 -d > '/etc/tiny-dfr/config.toml'")
+                script_lines.append("chmod 0644 '/var/lib/touchbar-enhancer/config.toml' '/etc/tiny-dfr/config.toml'")
 
-            # Copy config to /var/lib/touchbar-enhancer for systemd restoration
-            script_lines.append(f"install -m 0644 '{tmp_config_path}' '/var/lib/touchbar-enhancer/config.toml'")
-            script_lines.append(f"install -m 0644 '{tmp_config_path}' '/etc/tiny-dfr/config.toml'")
+                for src, dst in custom_icons_to_copy:
+                    with open(src, 'rb') as pf:
+                        b64_png = base64.b64encode(pf.read()).decode('utf-8')
+                    script_lines.append(f"echo '{b64_png}' | base64 -d > '{dst}'")
+                    # Also save icon to /var/lib for persistence
+                    icon_basename = os.path.basename(dst)
+                    script_lines.append(f"echo '{b64_png}' | base64 -d > '/var/lib/touchbar-enhancer/icons/{icon_basename}'")
+                    script_lines.append(f"chmod 0644 '{dst}' '/var/lib/touchbar-enhancer/icons/{icon_basename}'")
 
-            for src, dst in custom_icons_to_copy:
-                script_lines.append(f"install -m 0644 '{src}' '{dst}'")
-                # Also save icon to /var/lib for persistence
-                icon_basename = os.path.basename(dst)
-                script_lines.append(f"install -m 0644 '{src}' '/var/lib/touchbar-enhancer/icons/{icon_basename}'")
+                # Create systemd drop-in
+                dropin_dir = "/etc/systemd/system/tiny-dfr.service.d"
+                dropin_file = f"{dropin_dir}/99-touchbar-enhancer.conf"
+                script_lines.extend([
+                    f"install -d {dropin_dir}",
+                    "cat << 'EOF_DROPIN' > " + dropin_file,
+                    "[Service]",
+                    "ExecStartPre=-/usr/bin/mkdir -p /etc/tiny-dfr",
+                    "ExecStartPre=-/usr/bin/cp -f /var/lib/touchbar-enhancer/config.toml /etc/tiny-dfr/config.toml",
+                    "ExecStartPre=-/bin/sh -c 'cp -f /var/lib/touchbar-enhancer/icons/* /etc/tiny-dfr/ 2>/dev/null || true'",
+                    "EOF_DROPIN"
+                ])
 
-            # Create systemd drop-in
-            dropin_dir = "/etc/systemd/system/tiny-dfr.service.d"
-            dropin_file = f"{dropin_dir}/99-touchbar-enhancer.conf"
-            script_lines.extend([
-                f"install -d {dropin_dir}",
-                "cat << 'EOF' > " + dropin_file,
-                "[Service]",
-                "ExecStartPre=-/usr/bin/mkdir -p /etc/tiny-dfr",
-                "ExecStartPre=-/usr/bin/cp -f /var/lib/touchbar-enhancer/config.toml /etc/tiny-dfr/config.toml",
-                "ExecStartPre=-/bin/sh -c 'cp -f /var/lib/touchbar-enhancer/icons/* /etc/tiny-dfr/ 2>/dev/null || true'",
-                "EOF"
-            ])
+                script_lines.append('systemctl daemon-reload')
+                script_lines.append('systemctl restart tiny-dfr')
 
-            script_lines.append('systemctl daemon-reload')
-            script_lines.append('systemctl restart tiny-dfr')
+                script_content = "\n".join(script_lines) + "\n"
 
-            with open(script_path, 'w', encoding='utf-8') as f:
-                f.write("\n".join(script_lines) + "\n")
-            os.chmod(script_path, 0o755)
+                exit_code = 1
+                if hasattr(os, 'geteuid') and os.geteuid() == 0:
+                    completed = subprocess.run(['bash', '-c', script_content], capture_output=True, text=True, check=False)
+                    exit_code = completed.returncode
+                elif shutil.which('pkexec'):
+                    completed = subprocess.run(['pkexec', 'bash', '-c', script_content], capture_output=True, text=True, check=False)
+                    exit_code = completed.returncode
+                else:
+                    QMessageBox.critical(self, "Error", "pkexec is not available. Install pkexec or run as root.")
+                    return
 
-            exit_code = 1
-            if hasattr(os, 'geteuid') and os.geteuid() == 0:
-                completed = subprocess.run([script_path], capture_output=True, text=True, check=False)
-                exit_code = completed.returncode
-            elif shutil.which('pkexec'):
-                completed = subprocess.run(['pkexec', script_path], capture_output=True, text=True, check=False)
-                exit_code = completed.returncode
-            else:
-                QMessageBox.critical(self, "Error", "pkexec is not available. Install pkexec or run as root.")
-                return
-
-            if exit_code == 0:
-                QMessageBox.information(self, "Success", "Configuration deployed successfully!")
-            else:
-                QMessageBox.critical(self, "Error", f"Failed with exit code {exit_code}.\n{completed.stderr}")
+                if exit_code == 0:
+                    QMessageBox.information(self, "Success", "Configuration deployed successfully!")
+                else:
+                    QMessageBox.critical(self, "Error", f"Failed with exit code {exit_code}.\n{completed.stderr}")
 
         except Exception as exc:
             QMessageBox.critical(self, "Error", str(exc))
-        finally:
-            if 'secure_dir' in locals() and os.path.exists(secure_dir):
-                shutil.rmtree(secure_dir)
 
     def show_about(self):
         QMessageBox.about(self, "About Touch Bar Enhancer",
