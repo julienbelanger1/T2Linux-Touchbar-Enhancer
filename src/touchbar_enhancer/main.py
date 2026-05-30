@@ -14,6 +14,11 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QIcon, QPixmap, QFont, QColor,  QFontDatabase, QPainter, QAction
 from PyQt6.QtCore import Qt, QSize, pyqtSignal, QRect, QPropertyAnimation, pyqtProperty
 
+try:
+    from PyQt6.QtSvg import QSvgRenderer
+except ImportError:
+    QSvgRenderer = None
+
 from touchbar_enhancer.helpers import build_config_toml, CUPERTINO_ICONS_MAP, TINY_DFR_BUILTIN_ICONS, standard_media_layout
 
 class ToggleSwitch(QWidget):
@@ -455,8 +460,7 @@ class TouchbarEnhancer(QMainWindow):
         if icon_name in TINY_DFR_BUILTIN_ICONS:
             svg_path = f"/usr/share/tiny-dfr/{icon_name}.svg"
             if os.path.exists(svg_path):
-                try:
-                    from PyQt6.QtSvg import QSvgRenderer
+                if QSvgRenderer is not None:
                     renderer = QSvgRenderer(svg_path)
                     if renderer.isValid():
                         pixmap = QPixmap(size, size)
@@ -466,8 +470,6 @@ class TouchbarEnhancer(QMainWindow):
                         renderer.render(painter)
                         painter.end()
                         return pixmap
-                except ImportError:
-                    pass
 
         codepoint = CUPERTINO_ICONS_MAP.get(icon_name)
         if codepoint is not None:
