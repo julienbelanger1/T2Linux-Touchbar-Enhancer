@@ -1,5 +1,6 @@
 import os
 import sys
+import logging
 
 import tempfile
 import shutil
@@ -597,8 +598,9 @@ class TouchbarEnhancer(QMainWindow):
             self.chk_adaptive_brightness.setChecked(self.settings["adaptive_brightness"])
             self.render_preview()
 
-        except Exception as e:
-            QMessageBox.warning(self, "Error", f"Error loading configuration: {e}")
+        except Exception:
+            logging.exception("Error loading configuration")
+            QMessageBox.warning(self, "Error", "An error occurred while loading the configuration. Please check the logs for details.")
 
     def _parse_layer_config(self, keys):
         layout = []
@@ -753,8 +755,9 @@ class TouchbarEnhancer(QMainWindow):
             else:
                 QMessageBox.critical(self, "Error", f"Failed with exit code {exit_code}.\n{completed.stderr}")
 
-        except Exception as exc:
-            QMessageBox.critical(self, "Error", str(exc))
+        except Exception:
+            logging.exception("An error occurred during deployment")
+            QMessageBox.critical(self, "Error", "An unexpected error occurred during deployment. Please check the logs for details.")
         finally:
             if 'secure_dir' in locals() and os.path.exists(secure_dir):
                 shutil.rmtree(secure_dir)
